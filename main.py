@@ -6,7 +6,8 @@ from pyrogram.types import Message
 from state import ChatState
 from commands import CommandFactory, CollectUserDataCommand, OfferActionCommand
 import os
-
+from storage import Cache
+from model.invoice import Invoice
 
 load_dotenv()
 API_ID = os.getenv('API_ID')
@@ -14,8 +15,8 @@ API_HASH = os.getenv('API_HASH')
 BOT_API_TOKEN = os.getenv('BOT_API_TOKEN')
 
 app = Client('bot', API_ID, API_HASH, bot_token=BOT_API_TOKEN)
-# типа {chat_id: State}
 chat_state = dict()
+cache = Cache()
 
 handlers = {
     ChatState.START: CollectUserDataCommand.start,
@@ -29,8 +30,13 @@ handlers = {
 
 def hello(client: Client, message: Message):
     state = chat_state.get(message.from_user.id, ChatState.START)
+    saved_invoice = cache.get_item(message.from_user.id)
+    if not saved_invoice:
+        saved_invoice = Invoice()
+        cache.save_item(message.from_user.id, saved_invoice)
+
     command = CommandFactory.create(state, handlers)
-    chat_state[message.from_user.id] = command.execute(client=client, message=message)
+    chat_state[message.from_user.id] = command.execute(client=client, message=message, invoice=saved_invoice)
 
 
 
