@@ -4,7 +4,7 @@ from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram import filters
 from pyrogram.types import Message
 from state import ChatState
-from commands import CollectUserDataCommand
+from commands import CommandFactory, CollectUserDataCommand, OfferActionCommand
 import os
 
 
@@ -22,16 +22,17 @@ handlers = {
     ChatState.WAIT_NUMBER: CollectUserDataCommand.get_invoice_number,
     ChatState.WAIT_NAME: CollectUserDataCommand.get_name,
     ChatState.WAIT_INN: CollectUserDataCommand.get_inn,
-    ChatState.WAIT_CLIENT_NAME: CollectUserDataCommand.get_client_name
+    ChatState.WAIT_CLIENT_NAME: CollectUserDataCommand.get_client_name,
+    ChatState.COLLECT_COMPLETE: OfferActionCommand.offer_generation
 }
 
 
 def hello(client: Client, message: Message):
     state = chat_state.get(message.from_user.id, ChatState.START)
-    # херово что я императивно вызываю именно эту команду. А если мне уже надо другую?
-    command = CollectUserDataCommand(handlers, state, client, message)
-    chat_state[message.from_user.id] = command.execute()
-    
+    command = CommandFactory.create(state, handlers)
+    chat_state[message.from_user.id] = command.execute(client=client, message=message)
+
+
 
 app.add_handler(MessageHandler(hello, filters.command(['start'])))
 app.add_handler(MessageHandler(hello, filters.text))
