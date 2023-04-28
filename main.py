@@ -28,7 +28,17 @@ handlers = {
 }
 
 
-def hello(client: Client, message: Message):
+def greeting(client: Client, message: Message):
+    state = chat_state.get(message.from_user.id, ChatState.START)
+
+    if state != ChatState.COLLECT_COMPLETE:
+        OfferActionCommand.retry(client, message)
+        return
+    
+    OfferActionCommand.offer_collect_data(client, message)
+
+
+def collect_data(client: Client, message: Message):
     state = chat_state.get(message.from_user.id, ChatState.START)
     saved_invoice = cache.get_item(message.from_user.id)
     if not saved_invoice:
@@ -39,8 +49,16 @@ def hello(client: Client, message: Message):
     chat_state[message.from_user.id] = command.execute(client=client, message=message, invoice=saved_invoice)
 
 
+def generate(client: Client, message: Message):
+    state = chat_state.get(message.from_user.id, ChatState.START)
+    if state != ChatState.COLLECT_COMPLETE:
+        message.reply(
+            'Не заполнены данные, из которых генерировать отчет. Чтобы заполнить, выберите команду /collect'
+        )
 
-app.add_handler(MessageHandler(hello, filters.command(['start'])))
-app.add_handler(MessageHandler(hello, filters.text))
+app.add_handler(MessageHandler(greeting, filters.command(['start'])))
+app.add_handler(MessageHandler(collect_data, filters.command(['collect'])))
+app.add_handler(MessageHandler(generate, filters.command(['generate'])))
+app.add_handler(MessageHandler(collect_data, filters.text))
 
 app.run()

@@ -65,6 +65,23 @@ class CollectUserDataCommand:
     
 
 class OfferActionCommand:
+    def retry(client, message: Message):
+        message.reply(
+            'У нас есть сохраненные данные. Сгенерировать новый счет по ним?',
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton(
+                    'Проверить и изменить',
+                    callback_data='check:%d' % message.from_user.id
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    'Сбросить и заполнить заново',
+                    callback_data='change:%d' % message.from_user.id
+                )
+            ]])
+        )
+
     def offer_generation(client, message: Message, invoice: Invoice):
         message.reply(f'''
             Проверьте собранные данные, пожалуйста.
@@ -80,6 +97,23 @@ class OfferActionCommand:
             [
                 InlineKeyboardButton(
                     'Заполнить заново',
+                    callback_data='change:%d' % message.from_user.id
+                )
+            ]])
+        )
+
+    def offer_collect_data(client, message: Message):
+        message.reply(
+            'Добрый день! Этот бот умеет генерировать счета. Чтобы сделать это, необходимо заполнить данные. Начнем?',
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton(
+                    'Начать',
+                    callback_data='generate:%d' % message.from_user.id
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    'Пока нет',
                     callback_data='change:%d' % message.from_user.id
                 )
             ]])
